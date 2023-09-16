@@ -1,9 +1,13 @@
-### Monocle 3 ###
+#----------------------------------------------------------------------------------------------------------
+#### B cell_Trajectory inference ####
+#----------------------------------------------------------------------------------------------------------
+
+###### Monocle 3 #######
 library(monocle3)
 library(Seurat)
 library(ggplot2)
 library(dplyr)
-###### read data #########
+### read data ###
 scRNA <- readRDS("scRNA_B_Singlet.rds");
 data <- GetAssayData(scRNA, assay ='RNA', slot = 'counts');
 cell_metadata <- scRNA@meta.data;
@@ -20,11 +24,16 @@ int.embed <- int.embed[rownames(cds.embed),]
 cds@int_colData$reducedDims$UMAP <- int.embed
 cds <- cluster_cells(cds)
 cds <- learn_graph(cds)
+
+### Fig.5A ###
 pdf(file="monocle3_Bcells_trajectory-seuratclusterID.pdf", width=3.8, height=3.6)
 plot_cells(cds,color_cells_by = "seurat_clusters",label_groups_by_cluster = TRUE, label_leaves = FALSE, 
            label_branch_points = FALSE, group_label_size=3)
 while (!is.null(dev.list()))  
   dev.off()
+
+
+### Fig.5B ###
 cds <- order_cells(cds)
 pdf(file="monocle3_Bcells_pseudotime.pdf", width=4.9, height=3.6)
 plot_cells(cds, 
@@ -39,8 +48,10 @@ while (!is.null(dev.list()))
 
 
 
+
+### Subset cells by branch ###
 ### branch 3 ###
-cds_branch3 <- choose_graph_segments(cds)
+cds_branch3 <- choose_graph_segments(cds) #Fig.5D right#
 cds_branch3 <- preprocess_cds(cds_branch3, num_dim = 50);
 cds_branch3 <- reduce_dimension(cds_branch3, preprocess_method = "PCA")
 cds_branch3.embed <- cds_branch3@int_colData$reducedDims$UMAP
@@ -54,7 +65,8 @@ cds_branch3 <- order_cells(cds_branch3)
 modulated_genes_branch3 <- graph_test(cds_branch3, neighbor_graph = "principal_graph", cores = 4)
 write.csv(modulated_genes_branch3,"modulated_genes_branch3.csv",quote=FALSE)
 genes_branch3<- row.names(subset(modulated_genes_branch3, q_value == 0 & morans_I > 0.2))
-### pseudotime - interested genes ###
+
+### Fig.5K (pseudotime - interested genes) ###
 marker_genes_branch3 <- row.names(subset(fData(cds_branch3), 
                                   gene_short_name %in% c("CD27", "IGHD")))
 pdf(file="branch3_pseudotime_genes.pdf", width=12, height=3)
@@ -65,9 +77,8 @@ while (!is.null(dev.list()))
 
 
 
-
-### branch2 ###
-cds_branch2 <- choose_graph_segments(cds)
+### branch 2 ###
+cds_branch2 <- choose_graph_segments(cds) #Fig.5D middle#
 cds_branch2 <- preprocess_cds(cds_branch2, num_dim = 50);
 cds_branch2 <- reduce_dimension(cds_branch2, preprocess_method = "PCA")
 cds_branch2.embed <- cds_branch2@int_colData$reducedDims$UMAP
@@ -81,7 +92,8 @@ cds_branch2 <- order_cells(cds_branch2)
 modulated_genes_branch2 <- graph_test(cds_branch2, neighbor_graph = "principal_graph", cores = 4)
 write.csv(modulated_genes_branch2,"modulated_genes_branch2.csv",quote=FALSE)
 genes_branch2<- row.names(subset(modulated_genes_branch2, q_value == 0 & morans_I > 0.2))
-### pseudotime - interested genes ###
+
+### Fig.5E (pseudotime - interested genes) ###
 marker_genes_branch2 <- row.names(subset(fData(cds_branch2), 
                                       gene_short_name %in% c("CD27", "IGHD")))
 pdf(file="branch2_pseudotime_genes.pdf", width=12, height=3)
@@ -92,9 +104,8 @@ while (!is.null(dev.list()))
 
 
 
-
-####branch1
-cds_branch1 <- choose_graph_segments(cds)
+#### branch 1 ###
+cds_branch1 <- choose_graph_segments(cds) #Fig.5D left#
 cds_branch1 <- preprocess_cds(cds_branch1, num_dim = 50);
 cds_branch1 <- reduce_dimension(cds_branch1, preprocess_method = "PCA")
 cds_branch1.embed <- cds_branch1@int_colData$reducedDims$UMAP
@@ -108,7 +119,8 @@ cds_branch1 <- order_cells(cds_branch1)
 modulated_genes_branch1 <- graph_test(cds_branch1, neighbor_graph = "principal_graph", cores = 4)
 write.csv(modulated_genes_branch1,"modulated_genes_branch1.csv",quote=FALSE)
 genes_branch1<- row.names(subset(modulated_genes_branch1, q_value == 0 & morans_I > 0.2))
-### pseudotime - interested genes ###
+
+### Fig.5H (pseudotime - interested genes) ###
 marker_genes_branch1 <- row.names(subset(fData(cds_branch1), 
                                       gene_short_name %in% c("CD27", "IGHD")))
 pdf(file="branch1_pseudotime_genes.pdf", width=12, height=3)
@@ -120,11 +132,9 @@ while (!is.null(dev.list()))
 
 
 
-
-
 ### pseudotime heatmap ###
 library(ClusterGVis)
-### branch3 ###
+### Fig.5L (branch3) ###
 mat_branch3 <- pre_pseudotime_matrix(cds_obj = cds_branch3,
                                   gene_list = genes_branch3)
 ### kmeans ###
@@ -147,8 +157,7 @@ dev.off()
 
 
 
-
-### branch2 ###
+### Fig.5F (branch2) ###
 mat_branch2 <- pre_pseudotime_matrix(cds_obj = cds_branch2,
                                   gene_list = genes_branch2)
 ### kmeans ###
@@ -171,8 +180,7 @@ dev.off()
 
 
 
-
-### branch1 ###
+### Fig.5I (branch1) ###
 mat_branch1 <- pre_pseudotime_matrix(cds_obj = cds_branch1,
                                   gene_list = genes_branch1)
 ### kmeans ###
@@ -191,6 +199,7 @@ visCluster(object = ck_branch1,
            add.sampleanno = F,
            markGenes = sample(rownames(mat_branch1_sel),54,replace = T))
 dev.off()
+######### Monocel 3 end #########
 
 
 
@@ -198,20 +207,22 @@ dev.off()
 
 
 
-########################
+
+###### Slingshot #######
 rm(list=ls())
-### Slingshot ######
 library(slingshot)
 library(Seurat)
 library(RColorBrewer)
 library(grDevices)
-###### read data  ######
+### read data  ###
 scRNA <- readRDS("scRNA_B_Singlet.rds") 
 scRNA <- subset(scRNA, seurat_clusters %in% c("0","1","2","3","4","5","6","7","8","9","11","12"))
 scRNA.sce <- as.SingleCellExperiment(scRNA);
 class(scRNA.sce);
 sim <- slingshot(scRNA.sce,clusterLabels="seurat_clusters",reducedDim="PCA");
 summary(sim$slingPseudotime_1);
+
+### Fig.5C ###
 lin1 <- getLineages(sim, 
                     clusterLabels = "seurat_clusters", 
                     reducedDim = "UMAP")

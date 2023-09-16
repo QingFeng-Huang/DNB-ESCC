@@ -1,11 +1,14 @@
+#----------------------------------------------------------------------------------------------------------
+#### DN B, Memory B, Naive B and T&NK cell_Cell-cell communication ####
+#----------------------------------------------------------------------------------------------------------
+### Fig.3E-3H, Supplementary Table S3 ###
+### CellChat ###
 library(CellChat)
-
-###### read data #########
+### read data ###
 scRNA_T <- readRDS("scRNA_B_Singlet.rds");
 scRNA_B <- readRDS("scRNA_T&NK_Singlet.rds");
 unique(scRNA_B@meta.data[["celltype"]])
 scRNA_B <- subset(scRNA_B,celltype %in% c ("DN B","Memory B","Naive B"));
-
 mergeCols <- c("RNA_snn_res.2.6")
 scRNA <- merge(scRNA_T, scRNA_B, by = mergeCols, all = TRUE);
 scRNA;
@@ -26,37 +29,29 @@ cellchat <- addMeta(cellchat, meta = identity, meta.name = "labels")
 cellchat <- setIdent(cellchat, ident.use = "labels") 
 levels(cellchat@idents) 
 groupSize <- as.numeric(table(cellchat@idents)) 
-
 CellChatDB <- CellChatDB.human 
 CellChatDB.use <- subsetDB(CellChatDB, search = c("Secreted Signaling"))
 cellchat@DB <- CellChatDB.use 
-
 cellchat <- subsetData(cellchat) 
 future::plan("multiprocess", workers = 4) 
 cellchat <- identifyOverExpressedGenes(cellchat)
 cellchat <- identifyOverExpressedInteractions(cellchat)
 cellchat <- projectData(cellchat, PPI.human)  
-
 options(future.globals.maxSize = 1000*1024^2)
 cellchat <- computeCommunProb(cellchat)
 df.net <- subsetCommunication(cellchat)
-write.csv(df.net,"cellchat_net_lr.csv",quote=F,row.names=FALSE)
+write.csv(df.net,"cellchat_net_lr.csv",quote=F,row.names=FALSE) # Supplementary Table S3 #
 cellchat <- computeCommunProbPathway(cellchat)
 df.netp <- subsetCommunication(cellchat,slot.name="netP")
-write.csv(df.netp,"cellchat_net_pathway.csv",quote=F,row.names=FALSE)
 cellchat <- aggregateNet(cellchat)
 cellchat@netP$pathways
 head(cellchat@LR$LRsig)
-
 cellchat@netP$pathways
 levels(cellchat@idents) 
 vertex.receiver = seq(1,4)
 cellchat@LR$LRsig$pathway_name
 cellchat@LR$LRsig$antagonist
-
 pathways_name <- cellchat@netP$pathways;
-pathways_name;
-
 pdf(file=paste("","Number of interactions.pdf"), 
     width=27, height=12)
 netVisual_circle(cellchat@net$count,vertex.weight = groupSize,weight.scale=T,label.edge=F,
